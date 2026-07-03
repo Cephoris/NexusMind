@@ -3,8 +3,7 @@ import { MindMapTheme, THEMES, MindNodeProps, MARKER_MAP } from '../mindmap/type
 import { MIND_NODE_TYPE } from '../mindmap/shapes'
 import {
   Plus, Minus, Undo2, Redo2, ZoomIn, ZoomOut, Maximize,
-  List, Tag, Palette, Settings, Save, FolderOpen, Download,
-  Brain, GitBranch, Network, Fish, Clock,
+  List, Tag, Palette, Settings, Save, FolderOpen, Download, Play,
 } from 'lucide-react'
 
 interface ToolbarProps {
@@ -15,9 +14,10 @@ interface ToolbarProps {
   onThemeChange: (t: MindMapTheme) => void
   onTogglePanel: (p: 'outline' | 'markers' | 'properties' | 'theme') => void
   activePanel: string | null
+  onPitchMode: () => void
 }
 
-export function Toolbar({ editor, rootId, selectedId, theme, onThemeChange, onTogglePanel, activePanel }: ToolbarProps) {
+export function Toolbar({ editor, rootId, selectedId, theme, onThemeChange, onTogglePanel, activePanel, onPitchMode }: ToolbarProps) {
   if (!editor) return null
 
   const selectedShape = selectedId ? editor.getShape(selectedId as any) : null
@@ -144,6 +144,10 @@ export function Toolbar({ editor, rootId, selectedId, theme, onThemeChange, onTo
       {btn(<Save size={16} />, 'Sauvegarder', handleSave)}
       {btn(<FolderOpen size={16} />, 'Ouvrir', handleLoad)}
       {btn(<Download size={16} />, 'Exporter PNG', handleExportPNG)}
+
+      <div className="toolbar-sep" />
+
+      {btn(<Play size={16} />, 'Mode présentation', onPitchMode)}
 
       <div style={{ flex: 1 }} />
 

@@ -7,6 +7,7 @@ import { MindNodeProps, THEMES, MindMapTheme, getDefaultNodeProps } from './mind
 import { autoLayout } from './mindmap/autoLayout'
 import { Toolbar } from './components/Toolbar'
 import { SidePanel } from './components/SidePanel'
+import { PitchMode } from './components/PitchMode'
 import './styles.css'
 
 export default function App() {
@@ -15,6 +16,7 @@ export default function App() {
   const [theme, setTheme] = useState<MindMapTheme>(THEMES.dark)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [activePanel, setActivePanel] = useState<'outline' | 'markers' | 'properties' | 'theme' | null>(null)
+  const [pitchMode, setPitchMode] = useState(false)
 
   // Init root node on mount
   const handleMount = useCallback((ed: Editor) => {
@@ -103,7 +105,8 @@ export default function App() {
       <Toolbar editor={editor} rootId={rootId} selectedId={selectedId} theme={theme}
         onThemeChange={handleThemeChange}
         onTogglePanel={(p) => setActivePanel(activePanel === p ? null : p)}
-        activePanel={activePanel} />
+        activePanel={activePanel}
+        onPitchMode={() => setPitchMode(true)} />
       <div className="nexus-main">
         <div className="nexus-canvas-wrapper" style={{ background: theme.background }}>
           <Tldraw shapeUtils={[MindNodeShapeUtil, MindBranchShapeUtil]} onMount={handleMount} />
@@ -115,6 +118,9 @@ export default function App() {
             onClose={() => setActivePanel(null)} />
         )}
       </div>
+      {pitchMode && editor && rootId && (
+        <PitchMode editor={editor} rootId={rootId} theme={theme} onExit={() => setPitchMode(false)} />
+      )}
     </div>
   )
 }

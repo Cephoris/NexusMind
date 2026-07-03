@@ -219,3 +219,27 @@ html, body, #root {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #3a3a5c; border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: #4a4a6c; }
+
+/* Pitch mode */
+.pitch-mode {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pitch-controls {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(0,0,0,0.6);
+  padding: 8px 16px;
+  border-radius: 12px;
+}

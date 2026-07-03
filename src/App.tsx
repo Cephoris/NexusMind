@@ -4,6 +4,7 @@ import 'tldraw/tldraw.css'
 import { MindNodeShapeUtil, MindBranchShapeUtil, MIND_NODE_TYPE } from './mindmap/shapes'
 import { BranchOverlay } from './mindmap/BranchOverlay'
 import { MindNodeProps, THEMES, MindMapTheme, getDefaultNodeProps } from './mindmap/types'
+import { autoLayout } from './mindmap/autoLayout'
 import { Toolbar } from './components/Toolbar'
 import { SidePanel } from './components/SidePanel'
 import './styles.css'
@@ -42,6 +43,7 @@ export default function App() {
       ed.createShape({ id: c2Id as any, type: MIND_NODE_TYPE, x: -360, y: -60, rotation: 0, opacity: 1, props: c2Props, meta: {} } as any)
 
       ed.updateShape({ id: rootShapeId as any, type: MIND_NODE_TYPE, props: { ...rootProps, childIds: [c1Id, c2Id] } } as any)
+      autoLayout(ed, rootShapeId)
       ed.select(rootShapeId as any)
       setSelectedId(rootShapeId)
     })
@@ -69,14 +71,14 @@ export default function App() {
       if (!shape || shape.type !== MIND_NODE_TYPE) return
       const props = shape.props as unknown as MindNodeProps
 
-      if (e.key === 'Tab') { e.preventDefault(); addChild(editor, id as string, props, theme) }
-      else if (e.key === 'Enter') { e.preventDefault(); addSibling(editor, id as string, props, theme) }
-      else if ((e.key === 'Delete' || e.key === 'Backspace') && props.level !== 'root') { e.preventDefault(); deleteNode(editor, id as string, props) }
-      else if (e.key === ' ') { e.preventDefault(); toggleCollapse(editor, id as string, props) }
+      if (e.key === 'Tab') { e.preventDefault(); addChild(editor, id as string, props, theme, rootId!) }
+      else if (e.key === 'Enter') { e.preventDefault(); addSibling(editor, id as string, props, theme, rootId!) }
+      else if ((e.key === 'Delete' || e.key === 'Backspace') && props.level !== 'root') { e.preventDefault(); deleteNode(editor, id as string, props, rootId!) }
+      else if (e.key === ' ') { e.preventDefault(); toggleCollapse(editor, id as string, props, rootId!) }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [editor, theme])
+  }, [editor, theme, rootId])
 
   // Theme change
   const handleThemeChange = useCallback((t: MindMapTheme) => {
@@ -125,7 +127,7 @@ function getBranchIndex(editor: Editor, rootId: string, shapeId: string): number
   return (root.props as unknown as MindNodeProps).childIds.indexOf(shapeId)
 }
 
-function addChild(editor: Editor, parentId: string, parentProps: MindNodeProps, theme: MindMapTheme) {
+function addChild(editor: Editor, parentId: string, parentProps: MindNodeProps, theme: MindMapTheme, rootId: string) {
   const bi = parentProps.level === 'root' ? parentProps.childIds.length : getBranchIndex(editor, parentProps.parentId || '', parentId)
   const childLevel = parentProps.level === 'root' ? 'main' : 'sub'
   const childProps = getDefaultNodeProps('Nouveau sujet', childLevel, theme, bi, parentId)
@@ -133,11 +135,12 @@ function addChild(editor: Editor, parentId: string, parentProps: MindNodeProps, 
   editor.run(() => {
     editor.createShape({ id: childId as any, type: MIND_NODE_TYPE, x: 200, y: 0, rotation: 0, opacity: 1, props: childProps, meta: {} } as any)
     editor.updateShape({ id: parentId as any, type: MIND_NODE_TYPE, props: { ...parentProps, childIds: [...parentProps.childIds, childId] } } as any)
+    autoLayout(editor, rootId)
     editor.select(childId as any)
   })
 }
 
-function addSibling(editor: Editor, siblingId: string, sibProps: MindNodeProps, theme: MindMapTheme) {
+function addSibling(editor: Editor, siblingId: string, sibProps: MindNodeProps, theme: MindMapTheme, rootId: string) {
   if (!sibProps.parentId || sibProps.level === 'root') return
   const parent = editor.getShape(sibProps.parentId as any)
   if (!parent) return
@@ -151,11 +154,12 @@ function addSibling(editor: Editor, siblingId: string, sibProps: MindNodeProps, 
     const newChildIds = [...parentProps.childIds]
     newChildIds.splice(idx + 1, 0, newId)
     editor.updateShape({ id: sibProps.parentId as any, type: MIND_NODE_TYPE, props: { ...parentProps, childIds: newChildIds } } as any)
+    autoLayout(editor, rootId)
     editor.select(newId as any)
   })
 }
 
-function deleteNode(editor: Editor, nodeId: string, props: MindNodeProps) {
+function deleteNode(editor: Editor, nodeId: string, props: MindNodeProps, rootId: string) {
   editor.run(() => {
     const toDelete: string[] = [nodeId]
     function collect(id: string) {
@@ -174,9 +178,11 @@ function deleteNode(editor: Editor, nodeId: string, props: MindNodeProps) {
       }
     }
     editor.deleteShapes(toDelete as any[])
+    autoLayout(editor, rootId)
   })
 }
 
-function toggleCollapse(editor: Editor, nodeId: string, props: MindNodeProps) {
+function toggleCollapse(editor: Editor, nodeId: string, props: MindNodeProps, rootId: string) {
   editor.updateShape({ id: nodeId as any, type: MIND_NODE_TYPE, props: { ...props, collapsed: !props.collapsed } } as any)
+  editor.run(() => autoLayout(editor, rootId))
 }

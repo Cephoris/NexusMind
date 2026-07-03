@@ -8,6 +8,7 @@ import { autoLayout } from './mindmap/autoLayout'
 import { Toolbar } from './components/Toolbar'
 import { SidePanel } from './components/SidePanel'
 import { PitchMode } from './components/PitchMode'
+import { AIChat } from './components/AIChat'
 import './styles.css'
 
 export default function App() {
@@ -17,6 +18,7 @@ export default function App() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [activePanel, setActivePanel] = useState<'outline' | 'markers' | 'properties' | 'theme' | null>(null)
   const [pitchMode, setPitchMode] = useState(false)
+  const [aiChat, setAiChat] = useState(false)
 
   // Init root node on mount
   const handleMount = useCallback((ed: Editor) => {
@@ -59,6 +61,16 @@ export default function App() {
       setSelectedId(sel.length > 0 ? (sel[0] as string) : null)
     }, { source: 'user', scope: 'session' })
   }, [editor])
+
+  // Listen for AI-triggered root change
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail
+      if (detail) setRootId(detail)
+    }
+    window.addEventListener('nexusmind-newroot', handler)
+    return () => window.removeEventListener('nexusmind-newroot', handler)
+  }, [])
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -106,7 +118,9 @@ export default function App() {
         onThemeChange={handleThemeChange}
         onTogglePanel={(p) => setActivePanel(activePanel === p ? null : p)}
         activePanel={activePanel}
-        onPitchMode={() => setPitchMode(true)} />
+        onPitchMode={() => setPitchMode(true)}
+        onToggleAI={() => setAiChat(!aiChat)}
+        aiActive={aiChat} />
       <div className="nexus-main">
         <div className="nexus-canvas-wrapper" style={{ background: theme.background }}>
           <Tldraw shapeUtils={[MindNodeShapeUtil, MindBranchShapeUtil]} onMount={handleMount} />
@@ -116,6 +130,10 @@ export default function App() {
           <SidePanel editor={editor} rootId={rootId} selectedId={selectedId}
             activePanel={activePanel} theme={theme} onThemeChange={handleThemeChange}
             onClose={() => setActivePanel(null)} />
+        )}
+        {aiChat && editor && rootId && (
+          <AIChat editor={editor} rootId={rootId} selectedId={selectedId} theme={theme}
+            onClose={() => setAiChat(false)} />
         )}
       </div>
       {pitchMode && editor && rootId && (

@@ -3,7 +3,7 @@ import { MindMapTheme, THEMES, MindNodeProps, MARKER_MAP } from '../mindmap/type
 import { MIND_NODE_TYPE } from '../mindmap/shapes'
 import {
   Plus, Minus, Undo2, Redo2, ZoomIn, ZoomOut, Maximize,
-  List, Tag, Palette, Settings, Save, FolderOpen, Download, Play,
+  List, Tag, Palette, Settings, Save, FolderOpen, Download, Play, Bot,
 } from 'lucide-react'
 
 interface ToolbarProps {
@@ -15,9 +15,11 @@ interface ToolbarProps {
   onTogglePanel: (p: 'outline' | 'markers' | 'properties' | 'theme') => void
   activePanel: string | null
   onPitchMode: () => void
+  onToggleAI: () => void
+  aiActive: boolean
 }
 
-export function Toolbar({ editor, rootId, selectedId, theme, onThemeChange, onTogglePanel, activePanel, onPitchMode }: ToolbarProps) {
+export function Toolbar({ editor, rootId, selectedId, theme, onThemeChange, onTogglePanel, activePanel, onPitchMode, onToggleAI, aiActive }: ToolbarProps) {
   if (!editor) return null
 
   const selectedShape = selectedId ? editor.getShape(selectedId as any) : null
@@ -146,6 +148,8 @@ export function Toolbar({ editor, rootId, selectedId, theme, onThemeChange, onTo
       {btn(<Download size={16} />, 'Exporter PNG', handleExportPNG)}
 
       <div className="toolbar-sep" />
+
+      {btn(<Bot size={16} />, 'Assistant IA', onToggleAI, false, aiActive)}
 
       {btn(<Play size={16} />, 'Mode présentation', onPitchMode)}
 

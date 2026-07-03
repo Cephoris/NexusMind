@@ -17,26 +17,51 @@ interface AIChatProps {
 export function AIChat({ editor, rootId, selectedId, theme, onClose }: AIChatProps) {
   const [config, setConfig] = useState<AIConfig>(() => {
     const saved = localStorage.getItem('nexusmind-ai-config')
-    return saved ? JSON.parse(saved) : {
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved)
+        // Migrate old configs
+        if (parsed.model === 'llama3.2') {
+          parsed.model = 'qwen3-coder-next:cloud'
+          parsed.temperature = 0.3
+        }
+        // Always update systemPrompt to latest version
+        parsed.systemPrompt = `Tu es un générateur de cartes mentales. Tu réponds UNIQUEMENT avec du JSON valide, sans aucun texte avant ou après.
+
+Quand l'utilisateur demande de créer une carte, réponds avec ce format EXACT:
+
+{"action":"create","nodes":[{"title":"Sujet central","children":[{"title":"Branche 1","children":[{"title":"Sous-nœud A"},{"title":"Sous-nœud B"}]},{"title":"Branche 2","children":[{"title":"Détail 1"},{"title":"Détail 2"}]}],"instructions":"Description brève"}
+
+Règles:
+- "action" est "create", "add", "modify", "delete" ou "restructure"
+- "nodes" contient la hiérarchie des nœuds (title + children optionnel)
+- Pour "add": les nœuds seront ajoutés au nœud sélectionné
+- Pour "delete": ajoute "deleteTitles":["titre1","titre2"]
+- Titres courts: 2-5 mots maximum
+- PAS de texte avant ou après le JSON
+- PAS de markdown, PAS de backticks, JUSTE le JSON`
+        return parsed
+      } catch {}
+    }
+    return {
       baseUrl: 'http://localhost:11434/v1',
       apiKey: 'ollama',
-      model: 'llama3.2',
-      systemPrompt: `Tu es un assistant spécialisé dans la création de cartes mentales (mind maps).
-L'utilisateur te demande de créer ou modifier une carte mentale.
-Tu dois répondre avec un objet JSON valide décrivant la carte mentale.
+      model: 'qwen3-coder-next:cloud',
+      systemPrompt: `Tu es un générateur de cartes mentales. Tu réponds UNIQUEMENT avec du JSON valide, sans aucun texte avant ou après.
 
-Format JSON attendu:
-{
-  "action": "create" | "modify" | "add" | "delete" | "restructure",
-  "nodes": [
-    { "title": "Titre du nœud", "children": [{ "title": "Sous-nœud", "children": [...] }] }
-  ],
-  "instructions": "Description optionnelle"
-}
+Quand l'utilisateur demande de créer une carte, réponds avec ce format EXACT:
 
-Pour "create": génère toute la carte. Pour "add": ajoute au nœud sélectionné.
-Garde les titres courts (2-5 mots). Réponds UNIQUEMENT avec le JSON.`,
-      temperature: 0.7,
+{"action":"create","nodes":[{"title":"Sujet central","children":[{"title":"Branche 1","children":[{"title":"Sous-nœud A"},{"title":"Sous-nœud B"}]},{"title":"Branche 2","children":[{"title":"Détail 1"},{"title":"Détail 2"}]}],"instructions":"Description brève"}
+
+Règles:
+- "action" est "create", "add", "modify", "delete" ou "restructure"
+- "nodes" contient la hiérarchie des nœuds (title + children optionnel)
+- Pour "add": les nœuds seront ajoutés au nœud sélectionné
+- Pour "delete": ajoute "deleteTitles":["titre1","titre2"]
+- Titres courts: 2-5 mots maximum
+- PAS de texte avant ou après le JSON
+- PAS de markdown, PAS de backticks, JUSTE le JSON`,
+      temperature: 0.3,
       maxTokens: 4096,
     }
   })
@@ -241,7 +266,9 @@ Garde les titres courts (2-5 mots). Réponds UNIQUEMENT avec le JSON.`,
       setMessages([...newMessages, assistantMsg])
 
       // Parse and apply
+      console.log('[NexusMind AI] Raw response:', aiResponse)
       const parsed = parseAIResponse(aiResponse)
+      console.log('[NexusMind AI] Parsed:', parsed)
       if (parsed) {
         applyAIResponse(parsed)
         const infoMsg: ChatMessage = {
